@@ -12,6 +12,5 @@ class ProdukController extends Controller
      */
     public function index()
 {
-    dd('Laravel berhasil berjalan');
-}
+    die('Laravel berhasil berjalan');
 }
