@@ -12,8 +12,7 @@ class ProdukController extends Controller
      */
     public function index()
     {
-        $produks = Produk::all();
-        return view('produk.index', compact('produks'));
+        return 'Laravel berhasil berjalan';
     }
 
     /**
