@@ -1,95 +1,63 @@
-@extends('layouts.app')
+<?php
 
-@section('content')
+namespace App\Http\Controllers;
 
-<div class="container">
+use App\Models\Produk;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
-```
-<h3 class="mb-4 fw-bold">➕ Tambah Produk</h3>
+class ProdukController extends Controller
+{
+    /**
+     * Menampilkan daftar produk
+     */
+    public function index()
+    {
+        $produk = Produk::latest()->paginate(10);
+        return view('produk.index', compact('produk'));
+    }
 
-{{-- Notifikasi error --}}
-@if ($errors->any())
-    <div class="alert alert-danger">
-        <ul class="mb-0">
-            @foreach ($errors->all() as $error)
-                <li>{{ $error }}</li>
-            @endforeach
-        </ul>
-    </div>
-@endif
+    /**
+     * Menampilkan form tambah produk (View yang kamu buat sebelumnya)
+     */
+    public function create()
+    {
+        return view('produk.create');
+    }
 
-<div class="card shadow-sm border-0">
-    <div class="card-body">
+    /**
+     * Menyimpan data produk baru ke database
+     */
+    public function store(Request $request)
+    {
+        // 1. Validasi Input
+        $request->validate([
+            'nama_produk' => 'required|string|max:255',
+            'harga'       => 'required|numeric|min:0',
+            'stok'        => 'required|integer|min:0',
+            'deskripsi'   => 'required|string',
+            'gambar'      => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048', // Maksimal 2MB
+        ]);
 
-        <form action="{{ route('produk.store') }}" method="POST" enctype="multipart/form-data">
-            @csrf
+        // 2. Handle Upload Gambar jika ada
+        $namaGambar = null;
+        if ($request->hasFile('gambar')) {
+            $gambar = $request->file('gambar');
+            // Menyimpan ke folder 'public/produk' dengan nama unik
+            $namaGambar = time() . '_' . $gambar->hashName();
+            $gambar->storeAs('public/produk', $namaGambar);
+        }
 
-            {{-- Nama Produk --}}
-            <div class="mb-3">
-                <label class="form-label">Nama Produk</label>
-                <input type="text" name="nama_produk" class="form-control" required>
-            </div>
+        // 3. Simpan data ke Database
+        Produk::create([
+            'nama_produk' => $request->nama_produk,
+            'harga'       => $request->harga,
+            'stok'        => $request->stok,
+            'deskripsi'   => $request->deskripsi,
+            'gambar'      => $namaGambar,
+        ]);
 
-            {{-- Harga --}}
-            <div class="mb-3">
-                <label class="form-label">Harga</label>
-                <input type="number" name="harga" class="form-control" required>
-            </div>
-
-            {{-- Stok --}}
-            <div class="mb-3">
-                <label class="form-label">Stok</label>
-                <input type="number" name="stok" class="form-control" required>
-            </div>
-
-            {{-- Deskripsi --}}
-            <div class="mb-3">
-                <label class="form-label">Deskripsi</label>
-                <textarea name="deskripsi" class="form-control" rows="3" required></textarea>
-            </div>
-
-            {{-- Upload Gambar --}}
-            <div class="mb-3">
-                <label class="form-label">Gambar</label>
-                <input type="file" name="gambar" class="form-control" onchange="previewImage(event)">
-            </div>
-
-            {{-- Preview Gambar --}}
-            <div class="mb-3 text-center">
-                <img id="preview" src="#" class="img-fluid d-none rounded" style="max-height:200px;">
-            </div>
-
-            {{-- Tombol --}}
-            <div class="d-flex justify-content-between">
-                <a href="{{ route('produk.index') }}" class="btn btn-secondary">
-                    ⬅ Kembali
-                </a>
-
-                <button type="submit" class="btn btn-success">
-                    💾 Simpan Produk
-                </button>
-            </div>
-
-        </form>
-
-    </div>
-</div>
-```
-
-</div>
-
-{{-- SCRIPT PREVIEW GAMBAR --}}
-
-<script>
-function previewImage(event) {
-    const input = event.target;
-    const preview = document.getElementById('preview');
-
-    if (input.files && input.files[0]) {
-        preview.src = URL.createObjectURL(input.files[0]);
-        preview.classList.remove('d-none');
+        // 4. Redirect kembali dengan notifikasi sukses
+        return redirect()->route('produk.index')->with('success', 'Produk berhasil ditambahkan!');
     }
 }
-</script>
-
-@endsection
