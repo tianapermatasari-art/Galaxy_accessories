@@ -1,111 +1,99 @@
-<?php
+@extends('layouts.app')
 
-namespace App\Http\Controllers;
+@section('content')
+@php use Illuminate\Support\Str; @endphp
 
-use App\Models\Produk;
-use Illuminate\Http\Request;
+<div class="container py-4">
 
-class ProdukController extends Controller
-{
-    public function index()
-    {
-        $produk = Produk::latest()->paginate(9);
-        return view('produk.index', compact('produk'));
-    }
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="fw-bold">📦 Daftar Produk</h3>
+        <a href="{{ route('produk.create') }}" class="btn btn-primary shadow-sm">
+            ➕ Tambah Produk
+        </a>
+    </div>
 
-    public function create()
-    {
-        return view('produk.create');
-    }
+    @if (session('success'))
+        <div class="alert alert-success shadow-sm">
+            {{ session('success') }}
+        </div>
+    @endif
 
-    public function store(Request $request)
-    {
-        $request->validate([
-            'nama_produk' => 'required|string|max:255',
-            'harga'       => 'required|numeric|min:0',
-            'stok'        => 'required|integer|min:0',
-            'deskripsi'   => 'required|string',
-            'gambar'      => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
-        ]);
+    <div class="row">
+        @forelse ($produk as $item)
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 border-0 shadow-sm product-card">
 
-        $namaGambar = null;
+                    {{-- Gambar --}}
+                    @if($item->gambar && file_exists(public_path('images/' . $item->gambar)))
+                        <img src="{{ asset('images/' . $item->gambar) }}" 
+                             class="card-img-top"
+                             style="height:200px; object-fit:cover;">
+                    @else
+                        <div class="bg-light d-flex align-items-center justify-content-center" style="height:200px;">
+                            <span class="text-muted">No Image</span>
+                        </div>
+                    @endif
 
-        if ($request->hasFile('gambar')) {
-            $file = $request->file('gambar');
-            $namaGambar = time() . '_' . $file->getClientOriginalName();
-            $file->move(public_path('images'), $namaGambar);
-        }
+                    <div class="card-body">
+                        <h5 class="fw-bold">{{ $item->nama_produk }}</h5>
 
-        Produk::create([
-            'nama_produk' => $request->nama_produk,
-            'harga'       => $request->harga,
-            'stok'        => $request->stok,
-            'deskripsi'   => $request->deskripsi,
-            'gambar'      => $namaGambar,
-        ]);
+                        <p class="text-muted small">
+                            {{ Str::limit($item->deskripsi, 80) }}
+                        </p>
 
-        return redirect()->route('produk.index')->with('success', 'Produk berhasil ditambahkan!');
-    }
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-success fw-bold">
+                                Rp {{ number_format($item->harga, 0, ',', '.') }}
+                            </span>
 
-    public function show($id)
-    {
-        $produk = Produk::findOrFail($id);
-        return view('produk.show', compact('produk'));
-    }
+                            <span class="badge {{ $item->stok > 0 ? 'bg-success' : 'bg-danger' }}">
+                                Stok: {{ $item->stok }}
+                            </span>
+                        </div>
+                    </div>
 
-    public function edit($id)
-    {
-        $produk = Produk::findOrFail($id);
-        return view('produk.edit', compact('produk'));
-    }
+                    <div class="card-footer bg-white border-0 text-center">
+                        <a href="{{ route('produk.edit', $item->id) }}" 
+                           class="btn btn-sm btn-warning me-1">
+                            ✏️ Edit
+                        </a>
 
-    public function update(Request $request, $id)
-    {
-        $produk = Produk::findOrFail($id);
+                        <form action="{{ route('produk.destroy', $item->id) }}" 
+                              method="POST" 
+                              class="d-inline"
+                              onsubmit="return confirm('Yakin hapus?')">
+                            @csrf
+                            @method('DELETE')
 
-        $request->validate([
-            'nama_produk' => 'required|string|max:255',
-            'harga'       => 'required|numeric|min:0',
-            'stok'        => 'required|integer|min:0',
-            'deskripsi'   => 'required|string',
-            'gambar'      => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
-        ]);
+                            <button class="btn btn-sm btn-danger">
+                                🗑️ Hapus
+                            </button>
+                        </form>
+                    </div>
 
-        if ($request->hasFile('gambar')) {
+                </div>
+            </div>
+        @empty
+            <div class="text-center text-muted">
+                <p>Belum ada produk</p>
+            </div>
+        @endforelse
+    </div>
 
-            // hapus gambar lama
-            if ($produk->gambar && file_exists(public_path('images/' . $produk->gambar))) {
-                unlink(public_path('images/' . $produk->gambar));
-            }
+    <div class="mt-3">
+        {{ $produk->links('pagination::bootstrap-5') }}
+    </div>
 
-            $file = $request->file('gambar');
-            $namaGambar = time() . '_' . $file->getClientOriginalName();
-            $file->move(public_path('images'), $namaGambar);
+</div>
 
-            $produk->gambar = $namaGambar;
-        }
-
-        $produk->update([
-            'nama_produk' => $request->nama_produk,
-            'harga'       => $request->harga,
-            'stok'        => $request->stok,
-            'deskripsi'   => $request->deskripsi,
-            'gambar'      => $produk->gambar,
-        ]);
-
-        return redirect()->route('produk.index')->with('success', 'Produk berhasil diupdate!');
-    }
-
-    public function destroy($id)
-    {
-        $produk = Produk::findOrFail($id);
-
-        if ($produk->gambar && file_exists(public_path('images/' . $produk->gambar))) {
-            unlink(public_path('images/' . $produk->gambar));
-        }
-
-        $produk->delete();
-
-        return redirect()->route('produk.index')->with('success', 'Produk berhasil dihapus!');
-    }
+<style>
+.product-card {
+    transition: 0.3s;
 }
+
+.product-card:hover {
+    transform: translateY(-6px);
+}
+</style>
+
+@endsection
