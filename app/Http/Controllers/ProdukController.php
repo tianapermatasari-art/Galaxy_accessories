@@ -4,30 +4,20 @@ namespace App\Http\Controllers;
 
 use App\Models\Produk;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 
 class ProdukController extends Controller
 {
-    /**
-     * Menampilkan daftar produk
-     */
     public function index()
     {
-        $produk = Produk::latest()->paginate(10);
+        $produk = Produk::latest()->paginate(9);
         return view('produk.index', compact('produk'));
     }
 
-    /**
-     * Menampilkan form tambah produk
-     */
     public function create()
     {
         return view('produk.create');
     }
 
-    /**
-     * Menyimpan data produk baru
-     */
     public function store(Request $request)
     {
         $request->validate([
@@ -41,9 +31,9 @@ class ProdukController extends Controller
         $namaGambar = null;
 
         if ($request->hasFile('gambar')) {
-            $gambar = $request->file('gambar');
-            $namaGambar = time() . '_' . $gambar->hashName();
-            $gambar->storeAs('public/produk', $namaGambar);
+            $file = $request->file('gambar');
+            $namaGambar = time() . '_' . $file->getClientOriginalName();
+            $file->move(public_path('images'), $namaGambar);
         }
 
         Produk::create([
@@ -57,27 +47,18 @@ class ProdukController extends Controller
         return redirect()->route('produk.index')->with('success', 'Produk berhasil ditambahkan!');
     }
 
-    /**
-     * Menampilkan detail produk (opsional)
-     */
     public function show($id)
     {
         $produk = Produk::findOrFail($id);
         return view('produk.show', compact('produk'));
     }
 
-    /**
-     * Menampilkan form edit produk
-     */
     public function edit($id)
     {
         $produk = Produk::findOrFail($id);
         return view('produk.edit', compact('produk'));
     }
 
-    /**
-     * Update data produk
-     */
     public function update(Request $request, $id)
     {
         $produk = Produk::findOrFail($id);
@@ -90,17 +71,16 @@ class ProdukController extends Controller
             'gambar'      => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
         ]);
 
-        // Update gambar jika ada
         if ($request->hasFile('gambar')) {
 
-            // Hapus gambar lama
-            if ($produk->gambar) {
-                Storage::delete('public/produk/' . $produk->gambar);
+            // hapus gambar lama
+            if ($produk->gambar && file_exists(public_path('images/' . $produk->gambar))) {
+                unlink(public_path('images/' . $produk->gambar));
             }
 
-            $gambar = $request->file('gambar');
-            $namaGambar = time() . '_' . $gambar->hashName();
-            $gambar->storeAs('public/produk', $namaGambar);
+            $file = $request->file('gambar');
+            $namaGambar = time() . '_' . $file->getClientOriginalName();
+            $file->move(public_path('images'), $namaGambar);
 
             $produk->gambar = $namaGambar;
         }
@@ -110,21 +90,18 @@ class ProdukController extends Controller
             'harga'       => $request->harga,
             'stok'        => $request->stok,
             'deskripsi'   => $request->deskripsi,
+            'gambar'      => $produk->gambar,
         ]);
 
         return redirect()->route('produk.index')->with('success', 'Produk berhasil diupdate!');
     }
 
-    /**
-     * Hapus produk
-     */
     public function destroy($id)
     {
         $produk = Produk::findOrFail($id);
 
-        // Hapus gambar dari storage
-        if ($produk->gambar) {
-            Storage::delete('public/produk/' . $produk->gambar);
+        if ($produk->gambar && file_exists(public_path('images/' . $produk->gambar))) {
+            unlink(public_path('images/' . $produk->gambar));
         }
 
         $produk->delete();
