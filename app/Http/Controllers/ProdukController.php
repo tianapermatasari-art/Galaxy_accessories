@@ -1,109 +1,95 @@
-<?php
+@extends('layouts.app')
 
-namespace App\Http\Controllers;
+@section('content')
 
-use Illuminate\Http\Request;
-use App\Models\Produk;
+<div class="container">
 
-class ProdukController extends Controller
-{
-    // 🔹 Tampilkan semua produk
-    public function index()
-    {
-        $produks = Produk::latest()->get();
-        return view('produk.index', compact('produks'));
-    }
+```
+<h3 class="mb-4 fw-bold">➕ Tambah Produk</h3>
 
-    // 🔹 Form tambah produk
-    public function create()
-    {
-        return view('produk.create');
-    }
+{{-- Notifikasi error --}}
+@if ($errors->any())
+    <div class="alert alert-danger">
+        <ul class="mb-0">
+            @foreach ($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
 
-    // 🔹 Simpan data
-    public function store(Request $request)
-    {
-        $request->validate([
-            'nama_produk' => 'required',
-            'deskripsi'   => 'required',
-            'harga'       => 'required|numeric',
-            'stok'        => 'required|integer',
-            'gambar'      => 'nullable|image|mimes:jpg,jpeg,png|max:2048'
-        ]);
+<div class="card shadow-sm border-0">
+    <div class="card-body">
 
-        $gambar = null;
+        <form action="{{ route('produk.store') }}" method="POST" enctype="multipart/form-data">
+            @csrf
 
-        if ($request->hasFile('gambar')) {
-            $file = $request->file('gambar');
-            $gambar = time() . '.' . $file->getClientOriginalExtension();
-            $file->move(public_path('images'), $gambar);
-        }
+            {{-- Nama Produk --}}
+            <div class="mb-3">
+                <label class="form-label">Nama Produk</label>
+                <input type="text" name="nama_produk" class="form-control" required>
+            </div>
 
-        Produk::create([
-            'nama_produk' => $request->nama_produk,
-            'deskripsi'   => $request->deskripsi,
-            'harga'       => $request->harga,
-            'stok'        => $request->stok,
-            'gambar'      => $gambar
-        ]);
+            {{-- Harga --}}
+            <div class="mb-3">
+                <label class="form-label">Harga</label>
+                <input type="number" name="harga" class="form-control" required>
+            </div>
 
-        return redirect()->route('produk.index')
-            ->with('success', 'Produk berhasil ditambahkan');
-    }
+            {{-- Stok --}}
+            <div class="mb-3">
+                <label class="form-label">Stok</label>
+                <input type="number" name="stok" class="form-control" required>
+            </div>
 
-    // 🔹 Form edit
-    public function edit($id)
-    {
-        $produk = Produk::findOrFail($id);
-        return view('produk.edit', compact('produk'));
-    }
+            {{-- Deskripsi --}}
+            <div class="mb-3">
+                <label class="form-label">Deskripsi</label>
+                <textarea name="deskripsi" class="form-control" rows="3" required></textarea>
+            </div>
 
-    // 🔹 Update data
-    public function update(Request $request, $id)
-    {
-        $produk = Produk::findOrFail($id);
+            {{-- Upload Gambar --}}
+            <div class="mb-3">
+                <label class="form-label">Gambar</label>
+                <input type="file" name="gambar" class="form-control" onchange="previewImage(event)">
+            </div>
 
-        $request->validate([
-            'nama_produk' => 'required',
-            'deskripsi'   => 'required',
-            'harga'       => 'required|numeric',
-            'stok'        => 'required|integer',
-            'gambar'      => 'nullable|image|mimes:jpg,jpeg,png|max:2048'
-        ]);
+            {{-- Preview Gambar --}}
+            <div class="mb-3 text-center">
+                <img id="preview" src="#" class="img-fluid d-none rounded" style="max-height:200px;">
+            </div>
 
-        if ($request->hasFile('gambar')) {
-            $file = $request->file('gambar');
-            $gambar = time() . '.' . $file->getClientOriginalExtension();
-            $file->move(public_path('images'), $gambar);
+            {{-- Tombol --}}
+            <div class="d-flex justify-content-between">
+                <a href="{{ route('produk.index') }}" class="btn btn-secondary">
+                    ⬅ Kembali
+                </a>
 
-            $produk->gambar = $gambar;
-        }
+                <button type="submit" class="btn btn-success">
+                    💾 Simpan Produk
+                </button>
+            </div>
 
-        $produk->update([
-            'nama_produk' => $request->nama_produk,
-            'deskripsi'   => $request->deskripsi,
-            'harga'       => $request->harga,
-            'stok'        => $request->stok,
-            'gambar'      => $produk->gambar
-        ]);
+        </form>
 
-        return redirect()->route('produk.index')
-            ->with('success', 'Produk berhasil diupdate');
-    }
+    </div>
+</div>
+```
 
-    // 🔹 Hapus data
-    public function destroy($id)
-    {
-        $produk = Produk::findOrFail($id);
+</div>
 
-        // hapus gambar jika ada
-        if ($produk->gambar && file_exists(public_path('images/' . $produk->gambar))) {
-            unlink(public_path('images/' . $produk->gambar));
-        }
+{{-- SCRIPT PREVIEW GAMBAR --}}
 
-        $produk->delete();
+<script>
+function previewImage(event) {
+    const input = event.target;
+    const preview = document.getElementById('preview');
 
-        return redirect()->route('produk.index')
-            ->with('success', 'Produk berhasil dihapus');
+    if (input.files && input.files[0]) {
+        preview.src = URL.createObjectURL(input.files[0]);
+        preview.classList.remove('d-none');
     }
 }
+</script>
+
+@endsection

@@ -2,7 +2,7 @@
 
 @section('content')
     <h1>Edit Produk</h1>
-    <form action="{{ route('produks.update', $produk->id) }}" method="POST">
+    <form action="{{ route('produk.update', $produk->id) }}" method="POST">
         @csrf
         @method('PUT')
         <input type="text" name="nama_produk" value="{{ $produk->nama_produk }}" required>
