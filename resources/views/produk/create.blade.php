@@ -1,15 +1,21 @@
 @extends('layouts.app')
 
 @section('content')
-    <h1>Edit Produk</h1>
-    <form action="{{ route('produks.update', $produk->id) }}" method="POST">
+    <h1>Tambah Produk</h1>
+
+    <form action="{{ route('produk.store') }}" method="POST" enctype="multipart/form-data">
         @csrf
-        @method('PUT')
-        <input type="text" name="nama_produk" value="{{ $produk->nama_produk }}" required>
-        <textarea name="deskripsi">{{ $produk->deskripsi }}</textarea>
-        <input type="number" name="harga" value="{{ $produk->harga }}" required>
-        <input type="number" name="stok" value="{{ $produk->stok }}" required>
-        <input type="text" name="gambar" value="{{ $produk->gambar }}">
-        <button type="submit">Update</button>
+
+        <input type="text" name="nama_produk" placeholder="Nama Produk" required>
+
+        <textarea name="deskripsi" placeholder="Deskripsi"></textarea>
+
+        <input type="number" name="harga" placeholder="Harga" required>
+
+        <input type="number" name="stok" placeholder="Stok" required>
+
+        <input type="file" name="gambar">
+
+        <button type="submit">Simpan</button>
     </form>
 @endsection
