@@ -1,21 +1,64 @@
 @extends('layouts.app')
 
 @section('content')
-    <h1>Tambah Produk</h1>
+<div class="container py-4">
 
-    <form action="{{ route('produk.store') }}" method="POST" enctype="multipart/form-data">
-        @csrf
+    <h3 class="mb-4 fw-bold">➕ Tambah Produk</h3>
 
-        <input type="text" name="nama_produk" placeholder="Nama Produk" required>
+    @if ($errors->any())
+        <div class="alert alert-danger">
+            <ul class="mb-0">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
 
-        <textarea name="deskripsi" placeholder="Deskripsi"></textarea>
+    <div class="card shadow">
+        <div class="card-body">
 
-        <input type="number" name="harga" placeholder="Harga" required>
+            <form action="{{ route('produk.store') }}" method="POST" enctype="multipart/form-data">
+                @csrf
 
-        <input type="number" name="stok" placeholder="Stok" required>
+                <div class="mb-3">
+                    <label class="form-label">Nama Produk</label>
+                    <input type="text" name="nama_produk" class="form-control" required>
+                </div>
 
-        <input type="file" name="gambar">
+                <div class="mb-3">
+                    <label class="form-label">Deskripsi</label>
+                    <textarea name="deskripsi" class="form-control" rows="3"></textarea>
+                </div>
 
-        <button type="submit">Simpan</button>
-    </form>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Harga</label>
+                        <input type="number" name="harga" class="form-control" required>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Stok</label>
+                        <input type="number" name="stok" class="form-control" required>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Gambar</label>
+                    <input type="file" name="gambar" class="form-control">
+                </div>
+
+                <button type="submit" class="btn btn-primary">
+                    💾 Simpan
+                </button>
+
+                <a href="{{ route('produk.index') }}" class="btn btn-secondary">
+                    Kembali
+                </a>
+
+            </form>
+
+        </div>
+    </div>
+</div>
 @endsection
