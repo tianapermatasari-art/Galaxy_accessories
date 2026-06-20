@@ -18,7 +18,7 @@ class ProdukController extends Controller
     }
 
     /**
-     * Menampilkan form tambah produk (View yang kamu buat sebelumnya)
+     * Menampilkan form tambah produk
      */
     public function create()
     {
@@ -26,29 +26,26 @@ class ProdukController extends Controller
     }
 
     /**
-     * Menyimpan data produk baru ke database
+     * Menyimpan data produk baru
      */
     public function store(Request $request)
     {
-        // 1. Validasi Input
         $request->validate([
             'nama_produk' => 'required|string|max:255',
             'harga'       => 'required|numeric|min:0',
             'stok'        => 'required|integer|min:0',
             'deskripsi'   => 'required|string',
-            'gambar'      => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048', // Maksimal 2MB
+            'gambar'      => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
         ]);
 
-        // 2. Handle Upload Gambar jika ada
         $namaGambar = null;
+
         if ($request->hasFile('gambar')) {
             $gambar = $request->file('gambar');
-            // Menyimpan ke folder 'public/produk' dengan nama unik
             $namaGambar = time() . '_' . $gambar->hashName();
             $gambar->storeAs('public/produk', $namaGambar);
         }
 
-        // 3. Simpan data ke Database
         Produk::create([
             'nama_produk' => $request->nama_produk,
             'harga'       => $request->harga,
@@ -57,7 +54,81 @@ class ProdukController extends Controller
             'gambar'      => $namaGambar,
         ]);
 
-        // 4. Redirect kembali dengan notifikasi sukses
         return redirect()->route('produk.index')->with('success', 'Produk berhasil ditambahkan!');
+    }
+
+    /**
+     * Menampilkan detail produk (opsional)
+     */
+    public function show($id)
+    {
+        $produk = Produk::findOrFail($id);
+        return view('produk.show', compact('produk'));
+    }
+
+    /**
+     * Menampilkan form edit produk
+     */
+    public function edit($id)
+    {
+        $produk = Produk::findOrFail($id);
+        return view('produk.edit', compact('produk'));
+    }
+
+    /**
+     * Update data produk
+     */
+    public function update(Request $request, $id)
+    {
+        $produk = Produk::findOrFail($id);
+
+        $request->validate([
+            'nama_produk' => 'required|string|max:255',
+            'harga'       => 'required|numeric|min:0',
+            'stok'        => 'required|integer|min:0',
+            'deskripsi'   => 'required|string',
+            'gambar'      => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+        ]);
+
+        // Update gambar jika ada
+        if ($request->hasFile('gambar')) {
+
+            // Hapus gambar lama
+            if ($produk->gambar) {
+                Storage::delete('public/produk/' . $produk->gambar);
+            }
+
+            $gambar = $request->file('gambar');
+            $namaGambar = time() . '_' . $gambar->hashName();
+            $gambar->storeAs('public/produk', $namaGambar);
+
+            $produk->gambar = $namaGambar;
+        }
+
+        $produk->update([
+            'nama_produk' => $request->nama_produk,
+            'harga'       => $request->harga,
+            'stok'        => $request->stok,
+            'deskripsi'   => $request->deskripsi,
+        ]);
+
+        return redirect()->route('produk.index')->with('success', 'Produk berhasil diupdate!');
+    }
+
+    /**
+     * Hapus produk
+     */
+    public function destroy($id)
+    {
+        $produk = Produk::findOrFail($id);
+
+        // Hapus gambar dari storage
+        if ($produk->gambar) {
+            Storage::delete('public/produk/' . $produk->gambar);
+        }
+
+        $produk->delete();
+
+        return redirect()->route('produk.index')->with('success', 'Produk berhasil dihapus!');
     }
 }
